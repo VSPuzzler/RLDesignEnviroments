@@ -609,6 +609,31 @@ def api_get_run(run_id: str) -> dict[str, Any]:
     return run
 
 
+@app.get("/api/demo")
+def api_demo() -> dict[str, Any]:
+    """Return the two pre-built demo designs with pre-computed scores."""
+    demo_dir = os.path.join(STATIC_DIR, "demo")
+
+    def _read(name: str) -> str:
+        path = os.path.join(demo_dir, name)
+        try:
+            with open(path, encoding="utf-8") as f:
+                return f.read()
+        except OSError:
+            return ""
+
+    return {
+        "html_a": _read("a.html"),
+        "reward_a": 0.81,
+        "grade_a": "B",
+        "html_b": _read("b.html"),
+        "reward_b": 0.74,
+        "grade_b": "C",
+        "winner": "a",
+        "p_a_over_b": 0.71,
+    }
+
+
 @app.get("/api/weights")
 def api_list_weights() -> dict[str, Any]:
     versions = storage.list_weight_versions()

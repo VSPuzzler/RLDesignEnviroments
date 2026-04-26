@@ -3,8 +3,20 @@
 {% block content %}
 <div class="space-y-6">
 
-  <!-- Prompt row -->
-  <div class="max-w-3xl mx-auto">
+  <!-- Tab switcher -->
+  <div class="flex justify-center">
+    <div class="inline-flex bg-slate-900 border border-slate-800 p-1 rounded-xl gap-1">
+      <button id="tab-generate"
+        class="px-5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-white transition-colors"
+      >Generate</button>
+      <button id="tab-demo"
+        class="px-5 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+      >Demo</button>
+    </div>
+  </div>
+
+  <!-- Generate panel -->
+  <div id="panel-generate" class="max-w-3xl mx-auto">
     <div class="mb-4 text-center">
       <h1 class="text-xl font-bold text-white">Generate &amp; Compare UI Designs</h1>
       <p class="text-slate-500 text-sm mt-1">Describe a UI — we'll build two variants and score them side by side</p>
@@ -18,10 +30,18 @@
         class="px-5 py-3 bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors whitespace-nowrap"
       >Generate</button>
     </div>
-    <p id="status" class="text-center text-xs text-slate-500 mt-2 h-4"></p>
   </div>
 
-  <!-- Two preview boxes -->
+  <!-- Demo panel -->
+  <div id="panel-demo" class="hidden max-w-3xl mx-auto text-center">
+    <h1 class="text-xl font-bold text-white">Example Output</h1>
+    <p class="text-slate-500 text-sm mt-1">Two real scored designs — same product, two design approaches</p>
+  </div>
+
+  <!-- Status line (shared) -->
+  <p id="status" class="text-center text-xs text-slate-500 h-4"></p>
+
+  <!-- Two preview boxes (shared) -->
   <div class="grid grid-cols-2 gap-5">
 
     <!-- Design A -->
@@ -41,7 +61,7 @@
           </div>
           <div id="codeanim-a" class="hidden absolute inset-0 p-5 overflow-hidden font-mono text-xs leading-5 select-none"></div>
         </div>
-        <iframe id="iframe-a" class="absolute inset-0 w-full h-full border-0 bg-white" style="opacity:0;transition:opacity 0.5s ease" sandbox=""></iframe>
+        <iframe id="iframe-a" class="absolute inset-0 w-full h-full border-0 bg-white" style="opacity:0;transition:opacity 0.5s ease" sandbox="allow-same-origin allow-scripts"></iframe>
       </div>
     </div>
 
@@ -62,7 +82,7 @@
           </div>
           <div id="codeanim-b" class="hidden absolute inset-0 p-5 overflow-hidden font-mono text-xs leading-5 select-none"></div>
         </div>
-        <iframe id="iframe-b" class="absolute inset-0 w-full h-full border-0 bg-white" style="opacity:0;transition:opacity 0.5s ease" sandbox=""></iframe>
+        <iframe id="iframe-b" class="absolute inset-0 w-full h-full border-0 bg-white" style="opacity:0;transition:opacity 0.5s ease" sandbox="allow-same-origin allow-scripts"></iframe>
       </div>
     </div>
 

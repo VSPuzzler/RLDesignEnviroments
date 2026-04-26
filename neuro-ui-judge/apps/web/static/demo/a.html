@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse – Real-time analytics for modern teams</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #ffffff;
+      color: #0f172a;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #f1f5f9;
+      padding: 0 48px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 15px; font-weight: 800;
+    }
+    .logo-name { font-weight: 700; font-size: 17px; color: #0f172a; }
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a { text-decoration: none; color: #475569; font-size: 14px; font-weight: 500; }
+    .nav-links a:hover { color: #0f172a; }
+    .nav-sign-in { color: #475569 !important; }
+    .nav-cta {
+      background: #4f46e5; color: #fff !important;
+      padding: 9px 20px; border-radius: 8px; font-weight: 600 !important;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      max-width: 1200px; margin: 0 auto;
+      padding: 88px 48px 72px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: #ede9fe; color: #6d28d9;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+      padding: 5px 12px; border-radius: 100px; margin-bottom: 22px;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: 50px; font-weight: 800; line-height: 1.1;
+      letter-spacing: -0.03em; color: #0f172a; margin-bottom: 18px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 17px; color: #475569; line-height: 1.7;
+      margin-bottom: 32px; max-width: 440px;
+    }
+    .hero-actions { display: flex; gap: 12px; align-items: center; margin-bottom: 28px; }
+    .btn-primary {
+      background: #4f46e5; color: #fff;
+      padding: 13px 26px; border-radius: 9px;
+      font-weight: 700; font-size: 15px; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-secondary {
+      color: #374151; font-weight: 600; font-size: 15px;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 13px 16px;
+    }
+    .hero-trust { display: flex; gap: 20px; }
+    .trust-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #94a3b8; font-weight: 500;
+    }
+    .trust-check {
+      width: 16px; height: 16px;
+      background: #d1fae5; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #059669; font-size: 9px; font-weight: 800;
+    }
+
+    /* ── Dashboard mockup ── */
+    .dash-mockup {
+      background: #0f172a;
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 32px 64px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .dash-topbar {
+      background: #1e293b; padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .dash-dots { display: flex; gap: 6px; }
+    .dash-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dash-inner { padding: 20px; }
+    .dash-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .dash-heading { color: #e2e8f0; font-size: 13px; font-weight: 600; }
+    .live-pill {
+      background: #064e3b; color: #6ee7b7;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+      padding: 3px 9px; border-radius: 100px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .live-dot { width: 5px; height: 5px; background: #10b981; border-radius: 50%; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .kpi {
+      background: #1e293b; border-radius: 10px; padding: 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .kpi-label { color: #64748b; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
+    .kpi-val { color: #f1f5f9; font-size: 20px; font-weight: 700; margin-bottom: 3px; }
+    .kpi-delta { font-size: 11px; font-weight: 600; }
+    .kpi-delta.up { color: #34d399; }
+    .kpi-delta.down { color: #f87171; }
+    .chart-area {
+      background: #1e293b; border-radius: 10px; padding: 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .chart-label { color: #64748b; font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 10px; }
+    .chart-bars { display: flex; align-items: flex-end; gap: 5px; height: 64px; }
+    .chart-bar {
+      flex: 1; border-radius: 3px 3px 0 0;
+      background: linear-gradient(to top, #4f46e5, #818cf8);
+      opacity: 0.6;
+    }
+    .chart-bar:last-child { opacity: 1; }
+    .chart-bar.accent { background: linear-gradient(to top, #7c3aed, #a78bfa); opacity: 1; }
+
+    /* ── Logos strip ── */
+    .logos-strip {
+      border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;
+      padding: 36px 48px;
+    }
+    .logos-inner { max-width: 1200px; margin: 0 auto; text-align: center; }
+    .logos-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #94a3b8; margin-bottom: 22px;
+    }
+    .logos-row { display: flex; justify-content: center; gap: 52px; flex-wrap: wrap; }
+    .logo-word { font-size: 17px; font-weight: 800; color: #cbd5e1; letter-spacing: -0.02em; }
+
+    /* ── Features ── */
+    .features { max-width: 1200px; margin: 0 auto; padding: 88px 48px; }
+    .section-tag {
+      text-align: center; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: #6d28d9; margin-bottom: 10px;
+    }
+    .section-h2 {
+      text-align: center; font-size: 38px; font-weight: 800;
+      letter-spacing: -0.025em; color: #0f172a; margin-bottom: 14px;
+    }
+    .section-sub {
+      text-align: center; font-size: 16px; color: #64748b;
+      max-width: 520px; margin: 0 auto 60px; line-height: 1.75;
+    }
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+    .feature-card {
+      padding: 28px; border: 1.5px solid #e2e8f0; border-radius: 16px; background: #fff;
+    }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 11px;
+      background: #ede9fe; display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: #64748b; line-height: 1.65; }
+
+    /* ── Testimonials ── */
+    .testimonials { background: #f8fafc; padding: 88px 48px; }
+    .testimonials-inner { max-width: 1200px; margin: 0 auto; }
+    .testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 52px; }
+    .testimonial {
+      background: #fff; border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 28px;
+    }
+    .stars { color: #f59e0b; font-size: 14px; margin-bottom: 14px; }
+    .testimonial q { font-size: 14px; color: #374151; line-height: 1.7; display: block; margin-bottom: 20px; }
+    .reviewer { display: flex; align-items: center; gap: 10px; }
+    .reviewer-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .reviewer-name { font-size: 13px; font-weight: 700; color: #0f172a; }
+    .reviewer-role { font-size: 12px; color: #94a3b8; }
+
+    /* ── CTA ── */
+    .cta-section {
+      max-width: 1200px; margin: 0 auto; padding: 0 48px 96px;
+    }
+    .cta-inner {
+      background: linear-gradient(135deg, #4338ca 0%, #7c3aed 100%);
+      border-radius: 24px; padding: 72px; text-align: center;
+    }
+    .cta-inner h2 {
+      font-size: 40px; font-weight: 800; color: #fff;
+      letter-spacing: -0.025em; margin-bottom: 14px;
+    }
+    .cta-inner p { font-size: 17px; color: rgba(255,255,255,0.75); margin-bottom: 36px; }
+    .btn-white {
+      background: #fff; color: #4338ca;
+      padding: 14px 32px; border-radius: 10px;
+      font-weight: 700; font-size: 15px; text-decoration: none;
+      display: inline-block;
+    }
+
+    /* ── Footer ── */
+    footer {
+      max-width: 1200px; margin: 0 auto;
+      padding: 32px 48px;
+      border-top: 1px solid #f1f5f9;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    footer p { font-size: 13px; color: #94a3b8; }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: #94a3b8; text-decoration: none; }
+    .footer-links a:hover { color: #475569; }
+  </style>
+</head>
+<body>
+
+  <nav aria-label="Main navigation">
+    <a href="#" class="logo" aria-label="Pulse home">
+      <div class="logo-mark" aria-hidden="true">P</div>
+      <span class="logo-name">Pulse</span>
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="#">Product</a></li>
+      <li><a href="#">Integrations</a></li>
+      <li><a href="#">Pricing</a></li>
+      <li><a href="#">Docs</a></li>
+      <li><a href="#" class="nav-sign-in">Sign in</a></li>
+      <li><a href="#" class="nav-cta" role="button">Start free →</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-heading">
+      <div>
+        <div class="hero-eyebrow" aria-label="New feature">✦ Now with AI anomaly detection</div>
+        <h1 id="hero-heading">Analytics that <em>actually move</em> the needle</h1>
+        <p class="hero-sub">
+          Pulse gives your team real-time visibility into what's working — without drowning in dashboards. From acquisition to retention, in one clear view.
+        </p>
+        <div class="hero-actions">
+          <a href="#" class="btn-primary" role="button">Get started free</a>
+          <a href="#" class="btn-secondary" role="button">▶&nbsp;Watch 2-min demo</a>
+        </div>
+        <div class="hero-trust" role="list" aria-label="No commitment details">
+          <div class="trust-item" role="listitem"><div class="trust-check" aria-hidden="true">✓</div> No credit card</div>
+          <div class="trust-item" role="listitem"><div class="trust-check" aria-hidden="true">✓</div> 14-day free trial</div>
+          <div class="trust-item" role="listitem"><div class="trust-check" aria-hidden="true">✓</div> Cancel anytime</div>
+        </div>
+      </div>
+
+      <div class="dash-mockup" aria-label="Pulse dashboard preview" role="img">
+        <div class="dash-topbar">
+          <div class="dash-dots" aria-hidden="true">
+            <div class="dash-dot" style="background:#ef4444"></div>
+            <div class="dash-dot" style="background:#f59e0b"></div>
+            <div class="dash-dot" style="background:#10b981"></div>
+          </div>
+          <div style="font-size:11px;color:#475569;">pulse.app/dashboard</div>
+          <div style="width:48px"></div>
+        </div>
+        <div class="dash-inner">
+          <div class="dash-row">
+            <span class="dash-heading">Revenue overview</span>
+            <span class="live-pill"><span class="live-dot"></span>LIVE</span>
+          </div>
+          <div class="kpi-grid" role="list" aria-label="Key metrics">
+            <div class="kpi" role="listitem">
+              <div class="kpi-label">MRR</div>
+              <div class="kpi-val">$84.2k</div>
+              <div class="kpi-delta up">↑ 12.4% vs last mo</div>
+            </div>
+            <div class="kpi" role="listitem">
+              <div class="kpi-label">Active users</div>
+              <div class="kpi-val">12,481</div>
+              <div class="kpi-delta up">↑ 8.1%</div>
+            </div>
+            <div class="kpi" role="listitem">
+              <div class="kpi-label">Churn rate</div>
+              <div class="kpi-val">1.8%</div>
+              <div class="kpi-delta down">↑ 0.2%</div>
+            </div>
+          </div>
+          <div class="chart-area">
+            <div class="chart-label">Weekly revenue</div>
+            <div class="chart-bars" aria-label="Revenue chart" role="img">
+              <div class="chart-bar" style="height:38%"></div>
+              <div class="chart-bar" style="height:52%"></div>
+              <div class="chart-bar" style="height:44%"></div>
+              <div class="chart-bar" style="height:68%"></div>
+              <div class="chart-bar" style="height:58%"></div>
+              <div class="chart-bar" style="height:76%"></div>
+              <div class="chart-bar" style="height:72%"></div>
+              <div class="chart-bar accent" style="height:92%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="logos-strip">
+      <div class="logos-inner">
+        <p class="logos-label">Trusted by 4,200+ teams at companies like</p>
+        <div class="logos-row" role="list" aria-label="Customer logos">
+          <span class="logo-word" role="listitem">Stripe</span>
+          <span class="logo-word" role="listitem">Linear</span>
+          <span class="logo-word" role="listitem">Vercel</span>
+          <span class="logo-word" role="listitem">Loom</span>
+          <span class="logo-word" role="listitem">Clerk</span>
+          <span class="logo-word" role="listitem">Raycast</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="features" aria-labelledby="features-heading">
+      <p class="section-tag">Features</p>
+      <h2 class="section-h2" id="features-heading">Everything you need to understand your users</h2>
+      <p class="section-sub">Stop guessing what's working. Pulse turns raw events into clear, actionable signals your whole team can act on — in real time.</p>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">📊</div>
+          <h3>Real-time dashboards</h3>
+          <p>See what's happening in your product the moment it happens. No 24-hour lag, no stale exports.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🎯</div>
+          <h3>Funnel analysis</h3>
+          <p>Pinpoint exactly where users drop off and what nudges them to convert with one-click funnel views.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🔔</div>
+          <h3>Smart alerts</h3>
+          <p>Get notified the moment a key metric moves — via Slack, email, or webhook. Stay ahead of problems.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🧠</div>
+          <h3>AI anomaly detection</h3>
+          <p>Pulse surfaces patterns humans miss — cohort anomalies, retention drivers, revenue risk signals.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🤝</div>
+          <h3>Shareable reports</h3>
+          <p>Send live dashboards to any stakeholder. No login required — just a link that always stays fresh.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">🔗</div>
+          <h3>40+ integrations</h3>
+          <p>Connect Stripe, Segment, Postgres, and more in under 5 minutes. Your data, one source of truth.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="testimonials" aria-labelledby="testimonials-heading">
+      <div class="testimonials-inner">
+        <p class="section-tag">Testimonials</p>
+        <h2 class="section-h2" id="testimonials-heading">Teams that ship faster with Pulse</h2>
+        <div class="testimonial-grid">
+          <article class="testimonial">
+            <div class="stars" aria-label="5 stars">★★★★★</div>
+            <q>Pulse replaced four different tools for us. Our Monday standups are 20 minutes shorter because everyone already knows the numbers.</q>
+            <div class="reviewer">
+              <div class="reviewer-avatar" style="background:#4f46e5" aria-hidden="true">SR</div>
+              <div>
+                <div class="reviewer-name">Sara Reyes</div>
+                <div class="reviewer-role">Head of Product, Loom</div>
+              </div>
+            </div>
+          </article>
+          <article class="testimonial">
+            <div class="stars" aria-label="5 stars">★★★★★</div>
+            <q>The real-time alerts alone saved us from a billing bug that would have cost us $40k in churn. ROI on day one.</q>
+            <div class="reviewer">
+              <div class="reviewer-avatar" style="background:#7c3aed" aria-hidden="true">MK</div>
+              <div>
+                <div class="reviewer-name">Marcus Kim</div>
+                <div class="reviewer-role">CTO, Raycast</div>
+              </div>
+            </div>
+          </article>
+          <article class="testimonial">
+            <div class="stars" aria-label="5 stars">★★★★★</div>
+            <q>I sent our board a Pulse live link instead of a slide deck. They haven't asked for a deck since. This is the future.</q>
+            <div class="reviewer">
+              <div class="reviewer-avatar" style="background:#059669" aria-hidden="true">AP</div>
+              <div>
+                <div class="reviewer-name">Amara Park</div>
+                <div class="reviewer-role">CEO, Forma</div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section" aria-labelledby="cta-heading">
+      <div class="cta-inner">
+        <h2 id="cta-heading">Start understanding your users today</h2>
+        <p>Join 4,200+ teams making smarter product decisions with Pulse. No credit card required.</p>
+        <a href="#" class="btn-white" role="button">Get started for free →</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Pulse Analytics, Inc. All rights reserved.</p>
+    <nav class="footer-links" aria-label="Footer navigation">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Security</a>
+      <a href="#">Status</a>
+    </nav>
+  </footer>
+
+</body>
+</html>
