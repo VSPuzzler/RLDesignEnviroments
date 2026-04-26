@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Preferences — NeuroUI Judge{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-2">Human preference calibration</h1>
+<p class="text-slate-400 mb-6">Pairwise labels are stored locally and used to fit the reward weights via a Bradley–Terry / logistic preference model.</p>
+
+<div class="grid md:grid-cols-3 gap-6 mb-8">
+  <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 md:col-span-2">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Stored preferences ({{ preferences|length }})</p>
+      <button id="train-btn" class="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold">Train reward model</button>
+    </div>
+    {% if preferences %}
+    <div class="overflow-auto max-h-96">
+      <table class="w-full text-sm">
+        <thead class="text-xs text-slate-500 uppercase tracking-wider"><tr>
+          <th class="text-left px-2 py-1">A</th><th class="text-left px-2 py-1">B</th><th class="text-left px-2 py-1">Winner</th><th class="text-left px-2 py-1">Task</th>
+        </tr></thead>
+        <tbody>
+        {% for p in preferences %}
+          <tr class="border-t border-slate-800">
+            <td class="px-2 py-1 font-mono text-xs"><a href="/candidate/{{ p.ui_a_id }}" class="text-brand-300">{{ p.ui_a_id[:8] }}</a></td>
+            <td class="px-2 py-1 font-mono text-xs"><a href="/candidate/{{ p.ui_b_id }}" class="text-brand-300">{{ p.ui_b_id[:8] }}</a></td>
+            <td class="px-2 py-1"><span class="text-{% if p.winner == 'a' %}emerald{% elif p.winner == 'b' %}rose{% else %}slate{% endif %}-400 font-semibold">{{ p.winner }}</span></td>
+            <td class="px-2 py-1 text-slate-400">{{ p.task or "" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="text-slate-500 text-sm">No preferences yet. Visit <a href="/compare" class="text-brand-300">/compare</a> and submit a few.</p>
+    {% endif %}
+  </div>
+  <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+    <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Training output</p>
+    <pre id="train-output" class="text-xs font-mono text-slate-300 whitespace-pre-wrap">No run yet.</pre>
+  </div>
+</div>
+
+<div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+  <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Weight versions</p>
+  {% if versions %}
+  <table class="w-full text-sm">
+    <thead class="text-xs text-slate-500 uppercase tracking-wider"><tr>
+      <th class="text-left px-2 py-1">Version</th><th class="text-left px-2 py-1">Created</th><th class="text-left px-2 py-1">Pairwise acc.</th><th class="text-left px-2 py-1">Notes</th>
+    </tr></thead>
+    <tbody>
+    {% for v in versions %}
+      <tr class="border-t border-slate-800">
+        <td class="px-2 py-1 font-mono text-xs">{{ v.version_id }}</td>
+        <td class="px-2 py-1 text-slate-400 text-xs">{{ v.created_at }}</td>
+        <td class="px-2 py-1 tabular-nums">{{ "%.3f"|format(v.metrics.pairwise_accuracy) if v.metrics.pairwise_accuracy is defined else "-" }}</td>
+        <td class="px-2 py-1 text-slate-400 text-xs">{{ v.notes }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-slate-500 text-sm">No calibrated versions yet — defaults are in use.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const trainBtn = document.getElementById("train-btn");
+  trainBtn.addEventListener("click", async () => {
+    const out = document.getElementById("train-output");
+    out.textContent = "Training…";
+    const r = await fetch("/api/train-reward-model", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ tau: 1.0, n_steps: 600, learning_rate: 0.5, l2: 0.05 }),
+    }).then(r => r.json()).catch(e => ({ error: String(e) }));
+    out.textContent = JSON.stringify(r, null, 2);
+    setTimeout(() => location.reload(), 1500);
+  });
+</script>
+{% endblock %}

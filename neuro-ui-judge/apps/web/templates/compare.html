@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Compare — NeuroUI Judge{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-2">Pairwise comparison</h1>
+<p class="text-slate-400 mb-6">Pick two candidates. We render their reports side-by-side and predict the Bradley-Terry win probability under the active reward weights. You can also submit a human preference to refine the model.</p>
+
+<form class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8" method="get">
+  <select name="a" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm">
+    <option value="">— Choose A —</option>
+    {% for c in candidates %}
+      <option value="{{ c.candidate_id }}" {% if selected_a == c.candidate_id %}selected{% endif %}>{{ c.label or c.candidate_id }}</option>
+    {% endfor %}
+  </select>
+  <select name="b" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm">
+    <option value="">— Choose B —</option>
+    {% for c in candidates %}
+      <option value="{{ c.candidate_id }}" {% if selected_b == c.candidate_id %}selected{% endif %}>{{ c.label or c.candidate_id }}</option>
+    {% endfor %}
+  </select>
+  <button class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Compare</button>
+</form>
+
+{% if report_a and report_b %}
+<div class="grid md:grid-cols-2 gap-6">
+  {% for r in [report_a, report_b] %}
+  <div class="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+    <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+      <a href="/candidate/{{ r.candidate_id }}" class="text-sm font-mono text-brand-300">{{ r.candidate_id }}</a>
+      <div class="flex items-baseline gap-2">
+        <span class="text-2xl font-bold {% if r.grade in ['A','B'] %}text-emerald-400{% elif r.grade == 'C' %}text-amber-400{% else %}text-rose-400{% endif %}">{{ r.grade }}</span>
+        <span class="text-sm font-mono text-slate-300">{{ "%.3f"|format(r.overall_reward) }}</span>
+      </div>
+    </div>
+    <img src="/api/screenshot/{{ r.candidate_id }}" class="w-full bg-slate-950" style="aspect-ratio: 1440/900; object-fit: contain;" />
+    <div class="p-4">
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-2">Top sub-scores</p>
+      <ul class="space-y-1 text-sm">
+        {% for k, v in r.subscores.items() %}
+        <li class="flex items-center gap-2">
+          <span class="w-40 text-slate-400">{{ k }}</span>
+          <div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-brand-500 to-fuchsia-500" style="width: {{ (v*100)|round(1) }}%"></div>
+          </div>
+          <span class="w-10 text-right tabular-nums text-slate-300">{{ "%.2f"|format(v) }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="text-sm text-slate-300 mt-3 leading-relaxed">{{ r.explanation }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="mt-8 grid md:grid-cols-2 gap-6">
+  <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+    <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Predicted preference</p>
+    <p class="text-3xl font-bold tabular-nums">P(A &gt; B) = <span class="text-brand-300">{{ "%.3f"|format(pairwise_p) }}</span></p>
+    <p class="text-sm text-slate-500 mt-1">Bradley–Terry under active weights.</p>
+    <div class="mt-4 h-3 rounded-full bg-slate-800 overflow-hidden flex">
+      <div class="h-full bg-emerald-500" style="width: {{ (pairwise_p*100)|round(1) }}%"></div>
+      <div class="h-full bg-rose-500" style="width: {{ ((1-pairwise_p)*100)|round(1) }}%"></div>
+    </div>
+    <p class="text-xs text-slate-500 mt-2">A favoured ↔ B favoured</p>
+  </div>
+  <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+    <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Submit a human preference</p>
+    <p class="text-sm text-slate-400 mb-3">Calibrate the reward model: which UI better serves the task?</p>
+    <form id="pref-form" class="flex gap-2">
+      <input type="hidden" name="ui_a_id" value="{{ report_a.candidate_id }}" />
+      <input type="hidden" name="ui_b_id" value="{{ report_b.candidate_id }}" />
+      <button name="winner" value="a" class="flex-1 px-4 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">A is better</button>
+      <button name="winner" value="tie" class="px-4 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white">Tie</button>
+      <button name="winner" value="b" class="flex-1 px-4 py-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold">B is better</button>
+    </form>
+    <p id="pref-status" class="text-xs text-slate-400 mt-3"></p>
+    <p class="text-xs text-slate-500 mt-2">Stored locally; visit <a href="/preferences" class="text-brand-300 hover:text-brand-500">/preferences</a> to retrain weights.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const form = document.getElementById("pref-form");
+  if (form) {
+    form.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[name='winner']");
+      if (!btn) return;
+      e.preventDefault();
+      const status = document.getElementById("pref-status");
+      status.textContent = "Saving…";
+      const fd = new FormData(form);
+      const r = await fetch("/api/preferences", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          ui_a_id: fd.get("ui_a_id"),
+          ui_b_id: fd.get("ui_b_id"),
+          winner: btn.value,
+          rater_id: "demo",
+        }),
+      }).then(r => r.json());
+      status.textContent = r.pref_id ? `Saved preference ${r.pref_id}.` : "Failed.";
+    });
+  }
+</script>
+{% endblock %}

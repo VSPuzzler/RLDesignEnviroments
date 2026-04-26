@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Agent — NeuroUI Judge{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-2">Design agent</h1>
+<p class="text-slate-400 mb-6">Offline evolutionary search: each iteration, the agent picks the best parent, reads its weak sub-scores, and applies targeted CSS / structural mutations to spawn N children. Optionally a redesign LLM produces an extra fresh variant.</p>
+
+<div class="grid lg:grid-cols-3 gap-6">
+  <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 lg:col-span-1">
+    <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Run a new search</p>
+    <form id="agent-form" class="space-y-3">
+      <label class="block">
+        <span class="text-xs text-slate-400">Brief</span>
+        <input name="brief" placeholder="Landing page for a productivity SaaS" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm" />
+      </label>
+      <label class="block">
+        <span class="text-xs text-slate-400">Task</span>
+        <input name="task" placeholder="Sign up for free trial" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm" />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-xs text-slate-400">Iterations</span>
+          <input name="max_iterations" type="number" value="3" min="1" max="8" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm" />
+        </label>
+        <label class="block">
+          <span class="text-xs text-slate-400">Population</span>
+          <input name="population_size" type="number" value="3" min="1" max="6" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm" />
+        </label>
+      </div>
+      <label class="block">
+        <span class="text-xs text-slate-400">Seed HTML</span>
+        <textarea name="seed_html" rows="8" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 font-mono text-xs"></textarea>
+      </label>
+      <label class="flex items-center gap-2 text-xs text-slate-400">
+        <input type="checkbox" name="use_llm" /> use LLM redesign (requires OPENROUTER_API_KEY)
+      </label>
+      <button class="w-full px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Run agent</button>
+    </form>
+    <p id="agent-status" class="text-xs text-slate-400 mt-3"></p>
+  </div>
+
+  <div class="lg:col-span-2 space-y-6">
+    <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Recent runs</p>
+      {% if runs %}
+      <ul class="text-sm divide-y divide-slate-800">
+      {% for r in runs %}
+        <li class="py-2 flex items-center justify-between">
+          <a href="/agent?run_id={{ r.run_id }}" class="font-mono text-xs text-brand-300">{{ r.run_id }}</a>
+          <span class="text-slate-300 truncate max-w-[400px]">{{ r.brief }}</span>
+          <span class="text-slate-500 text-xs">{{ r.started_at }}</span>
+        </li>
+      {% endfor %}
+      </ul>
+      {% else %}<p class="text-sm text-slate-500">No runs yet.</p>{% endif %}
+    </div>
+
+    {% if run %}
+    <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Reward across iterations</p>
+        <span class="text-xs text-slate-500 font-mono">{{ run.run_id }}</span>
+      </div>
+      <div id="agent-curve" style="height: 260px;"></div>
+    </div>
+
+    <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Iterations</p>
+      <div class="space-y-3">
+      {% for it in run.iterations %}
+        <div class="rounded-lg border border-slate-800 p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-slate-300">Iteration {{ it.iteration }}</span>
+            <span class="text-sm font-mono text-emerald-300">best {{ "%.3f"|format(it.best_reward) }}</span>
+          </div>
+          {% if it.mutation_plan %}<p class="text-xs text-slate-400 mb-1">plan: <span class="text-brand-300 font-mono">{{ it.mutation_plan|join(' → ') }}</span></p>{% endif %}
+          <p class="text-xs text-slate-400 mb-2">{{ it.explanation }}</p>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {% for cid in it.candidate_ids %}
+              {% set rep = run.reports.get(cid) %}
+              <a href="/candidate/{{ cid }}" class="block rounded border border-slate-800 hover:border-brand-500/50">
+                <img src="/api/screenshot/{{ cid }}" class="w-full aspect-video bg-slate-950 object-cover rounded-t" />
+                <div class="px-2 py-1 flex items-center justify-between">
+                  <span class="font-mono text-[10px] text-slate-500">{{ cid[-8:] }}</span>
+                  {% if rep %}<span class="text-xs font-semibold {% if rep.grade in ['A','B'] %}text-emerald-400{% elif rep.grade == 'C' %}text-amber-400{% else %}text-rose-400{% endif %}">{{ "%.2f"|format(rep.overall_reward) }}</span>{% endif %}
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const SEED_DEFAULT = `<!doctype html><html><head><meta charset="utf-8"><title>Acme</title>
+<style>body{font-family:Arial;margin:0;background:#fafafa;color:#222}
+.h{padding:32px;max-width:1100px;margin:0 auto}h1{font-size:28px;margin:0 0 8px}
+p{color:#777;font-size:14px;line-height:1.4;max-width:540px}
+.cta{display:inline-block;margin-top:16px;padding:8px 14px;background:#888;color:#eee;border-radius:4px;text-decoration:none;font-size:13px}
+</style></head>
+<body><section class="h"><h1>Acme productivity</h1>
+<p>The fastest way to take an idea to production. Trusted by engineers everywhere. Sign up to start.</p>
+<a class="cta" href="#">go</a><a class="cta" href="#" style="margin-left:8px;background:#999">learn more</a></section></body></html>`;
+  const seed = document.querySelector('textarea[name="seed_html"]');
+  if (seed && !seed.value) seed.value = SEED_DEFAULT;
+
+  document.getElementById("agent-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const status = document.getElementById("agent-status");
+    status.textContent = "Running agent (this may take a minute)…";
+    const r = await fetch("/api/generate-variants", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        seed_html: fd.get("seed_html"),
+        brief: fd.get("brief"),
+        task: fd.get("task"),
+        max_iterations: parseInt(fd.get("max_iterations") || "3"),
+        population_size: parseInt(fd.get("population_size") || "3"),
+        use_llm: !!fd.get("use_llm"),
+      }),
+    }).then(r => r.json()).catch(e => ({ error: String(e) }));
+    if (r.run_id) {
+      status.textContent = "Done.";
+      location.href = "/agent?run_id=" + r.run_id;
+    } else {
+      status.textContent = "Failed: " + (r.error || JSON.stringify(r));
+    }
+  });
+
+  {% if run %}
+  window.__RUN__ = {{ run|tojson }};
+  {% endif %}
+</script>
+<script src="/static/agent.js"></script>
+{% endblock %}

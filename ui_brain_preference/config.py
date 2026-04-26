@@ -2,17 +2,30 @@
 
 import os
 
+# ── .env autoload ────────────────────────────────────────────────────────────
+# Try to load `.env` sitting next to this file. Already-exported environment
+# variables win, so a shell `export` always overrides the file.
+try:
+    from dotenv import load_dotenv  # type: ignore[import-not-found]
+
+    _ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(_ENV_PATH):
+        load_dotenv(_ENV_PATH, override=False)
+except ImportError:
+    # python-dotenv not installed: fall back to whatever is already exported.
+    pass
+
 # ── API ──────────────────────────────────────────────────────────────────────
 OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
 
 # Model used to generate UI variants (needs strong HTML/CSS ability)
 GENERATION_MODEL: str = os.getenv(
-    "GENERATION_MODEL", "anthropic/claude-3.5-sonnet"
+    "GENERATION_MODEL", "anthropic/claude-sonnet-4.5"
 )
 # Model used as the judge agent
 JUDGE_MODEL: str = os.getenv(
-    "JUDGE_MODEL", "anthropic/claude-3.5-sonnet"
+    "JUDGE_MODEL", "anthropic/claude-sonnet-4.5"
 )
 
 # ── Tribe V2 ─────────────────────────────────────────────────────────────────
