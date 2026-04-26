@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Upload — NeuroUI Judge{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-1">Score a UI candidate</h1>
+<p class="text-slate-400 mb-6">Add a self-contained HTML screen. The report includes a screenshot, audit results, neural-proxy signals, and recommended fixes.</p>
+<form id="upload-form" class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <label class="block">
+      <span class="text-sm text-slate-400">Label</span>
+      <input name="label" placeholder="e.g. landing-v3" class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm" />
+    </label>
+    <label class="block">
+      <span class="text-sm text-slate-400">User task</span>
+      <input name="task" placeholder="e.g. Sign up for free trial" class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm" />
+    </label>
+  </div>
+  <label class="block">
+    <span class="text-sm text-slate-400">HTML</span>
+    <textarea name="html" rows="14" class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 font-mono text-xs" placeholder="<!doctype html><html>..."></textarea>
+  </label>
+  <div class="flex items-center gap-3">
+    <button type="submit" class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Score candidate</button>
+    <button id="example-btn" type="button" class="px-3 py-2 rounded-lg border border-slate-700 text-slate-300 text-sm">Insert example</button>
+    <span id="upload-status" class="text-sm text-slate-400"></span>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const EXAMPLE_HTML = `<!doctype html><html><head><meta charset="utf-8"><title>Acme</title>
+<style>body{font-family:Inter,sans-serif;margin:0;background:#fff;color:#111}
+.hero{padding:80px 32px;max-width:1100px;margin:0 auto}h1{font-size:48px;margin:0 0 12px}
+p{color:#555;font-size:18px;max-width:560px;line-height:1.5}
+.cta{display:inline-block;margin-top:24px;padding:14px 22px;background:#1f1f1f;color:#fff;border-radius:10px;font-weight:600;text-decoration:none}
+</style></head>
+<body><section class="hero"><h1>Ship faster with Acme</h1>
+<p>The fastest way to take an idea to production. Trusted by 10,000+ engineers.</p>
+<a class="cta" href="#">Get started free</a></section></body></html>`;
+
+  document.getElementById("example-btn").onclick = () => {
+    document.querySelector('textarea[name="html"]').value = EXAMPLE_HTML;
+    document.querySelector('input[name="label"]').value = "acme-landing-v1";
+    document.querySelector('input[name="task"]').value = "Sign up for free trial";
+  };
+
+  document.getElementById("upload-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const status = document.getElementById("upload-status");
+    status.textContent = "Creating candidate...";
+    const create = await fetch("/api/candidates", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ label: fd.get("label"), task: fd.get("task"), html: fd.get("html") }),
+    }).then(r => r.json());
+    if (!create.candidate_id) { status.textContent = "Failed"; return; }
+    status.textContent = "Scoring...";
+    const rep = await fetch("/api/score", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ candidate_id: create.candidate_id }),
+    }).then(r => r.json());
+    if (!rep.candidate_id) { status.textContent = "Score failed"; return; }
+    location.href = "/candidate/" + create.candidate_id;
+  });
+</script>
+{% endblock %}

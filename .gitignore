@@ -31,3 +31,19 @@ build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# External repos cloned for local development (e.g. facebookresearch/tribev2).
+# Source is fetched per-machine; not committed into this repo.
+/external/
+
+# NeuroUI Judge — local artifacts. Project's own .gitignore covers most of
+# this but we belt-and-brace at the repo root so accidental commits are hard.
+neuro-ui-judge/data/renders/
+neuro-ui-judge/data/*.db
+neuro-ui-judge/data/*.db-journal
+neuro-ui-judge/apps/web/static/fsaverage5.glb
+
+# UI brain preference — output artifacts.
+ui_brain_preference/outputs/screenshots/
+ui_brain_preference/outputs/ui_variants/
+ui_brain_preference/outputs/comparisons.json

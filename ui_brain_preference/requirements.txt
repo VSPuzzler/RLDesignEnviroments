@@ -1,14 +1,18 @@
-# Core dependencies
-openai>=1.12.0          # OpenRouter API (uses OpenAI-compatible client)
-playwright>=1.42.0      # Headless browser for screenshots
+# ui_brain_preference — minimal install for the simulation-mode pipeline.
+#
+# This file installs everything needed to run `python main.py "..."` end-to-end
+# WITHOUT a real Tribe V2 backend (brain_scorer.py falls back to deterministic
+# simulation). For real Tribe V2, see requirements-tribe.txt.
 
-# Brain encoding
-tribev2                 # Meta Tribe V2 – install from Meta's distribution
-torch>=2.1.0            # Required by tribev2
-torchvision>=0.16.0     # Image preprocessing for tribev2
-transformers>=4.38.0    # HuggingFace model hub loading
-huggingface_hub>=0.21.0 # Model weight downloads
+# OpenRouter (uses the OpenAI-compatible client).
+openai>=1.12.0
 
-# Data handling
+# Headless browser for screenshots.
+playwright>=1.42.0
+
+# .env autoloading (config.py looks for it; safe to omit).
+python-dotenv>=1.0.0
+
+# Brain-scorer simulation + image I/O.
 numpy>=1.26.0
-Pillow>=10.2.0          # Image I/O / verification
+Pillow>=10.2.0

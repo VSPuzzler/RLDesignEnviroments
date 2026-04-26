@@ -1,0 +1,6 @@
+# Sidecar-only deps. The heavy ML stack (torch, transformers, neuralset,
+# tribev2 itself) is provided by the `neuroui-tribe` conda env.
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.0
+numpy>=1.26.0

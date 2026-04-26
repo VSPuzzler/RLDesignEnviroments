@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-slate-950 text-slate-100">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}NeuroUI Judge{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: "#0284c7", 600: "#0369a1", 300: "#7dd3fc" },
+            cortex: { mag: "#ef4444", mid: "#f59e0b", lo: "#10b981", deep: "#3b82f6" },
+          },
+          fontFamily: {
+            display: ["Inter", "ui-sans-serif", "system-ui"],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/recharts/umd/Recharts.min.js" crossorigin></script>
+  <link rel="stylesheet" href="/static/app.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="font-display antialiased min-h-screen">
+  <div class="border-b border-slate-800 bg-slate-950 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-6 py-3 flex items-center gap-6">
+      <a href="/" class="flex items-center gap-2 group">
+        <span class="w-7 h-7 rounded-md bg-brand-500 inline-flex items-center justify-center text-xs font-bold text-white">N</span>
+        <span class="font-bold tracking-tight text-lg">NeuroUI Judge</span>
+      </a>
+      <nav class="flex items-center gap-4 text-sm text-slate-300">
+        <a href="/" class="hover:text-white">Dashboard</a>
+        <a href="/upload" class="hover:text-white">Score UI</a>
+        <a href="/compare" class="hover:text-white">Compare</a>
+        <a href="/preferences" class="hover:text-white">Calibration</a>
+        <a href="/agent" class="hover:text-white">Improve</a>
+      </nav>
+      <div class="ml-auto flex items-center gap-3 text-xs">
+        <span class="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">TRIBE mode: <span class="text-brand-300 font-semibold">{{ tribe_mode|default("mock") }}</span></span>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="max-w-7xl mx-auto px-6 py-10 text-xs text-slate-500 border-t border-slate-900 mt-16">
+    <p><strong class="text-slate-300">Model note.</strong>
+    Scores combine deterministic UI checks with population-level neural proxies. They are design signals, not measured user preference.</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

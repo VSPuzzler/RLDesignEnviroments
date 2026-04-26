@@ -1,0 +1,39 @@
+/* NeuroUI Judge dashboard styles */
+
+body {
+  background: #020617;
+}
+
+#overlay-canvas {
+  pointer-events: none;
+}
+
+/* SVG chart helpers */
+.axis text { fill: #94a3b8; font-size: 10px; }
+.axis line, .axis path { stroke: #334155; }
+.grid line { stroke: #1e293b; stroke-dasharray: 2 3; }
+
+.bar { fill: #38bdf8; }
+.bar.alt { fill: #14b8a6; }
+.bar:hover { fill: #7dd3fc; }
+
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  transform: translate(-50%, -110%);
+  z-index: 5;
+  display: none;
+}
+.tooltip.show { display: block; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
