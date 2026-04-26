@@ -49,14 +49,14 @@
       const a = angle(i);
       return `${cx + Math.cos(a) * R * v},${cy + Math.sin(a) * R * v}`;
     }).join(" ");
-    E("polygon", { points: pts, fill: "rgba(124,92,255,0.30)", stroke: "#7c5cff", "stroke-width": 2 }, svg);
+    E("polygon", { points: pts, fill: "rgba(2,132,199,0.28)", stroke: "#0284c7", "stroke-width": 2 }, svg);
     // Dots
     keys.forEach((k, i) => {
       const v = NUI.clamp(subscores[k]);
       const a = angle(i);
       const x = cx + Math.cos(a) * R * v;
       const y = cy + Math.sin(a) * R * v;
-      E("circle", { cx: x, cy: y, r: 3, fill: "#a48dff" }, svg);
+      E("circle", { cx: x, cy: y, r: 3, fill: "#7dd3fc" }, svg);
     });
   }
 
@@ -72,11 +72,6 @@
     const svg = E("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H });
     host.appendChild(svg);
 
-    const defs = E("defs", {}, svg);
-    const grad = E("linearGradient", { id: "barGradC", x1: 0, x2: 1, y1: 0, y2: 0 }, defs);
-    E("stop", { offset: "0%", "stop-color": "#7c5cff" }, grad);
-    E("stop", { offset: "100%", "stop-color": "#d946ef" }, grad);
-
     const tip = NUI.tooltipHandler(host);
 
     keys.forEach((k, i) => {
@@ -86,7 +81,7 @@
       const v = NUI.clamp(subscores[k]);
       const r = E("rect", {
         x: padL, y: y + 8, width: (W - padL - padR) * v, height: 8, rx: 4,
-        fill: "url(#barGradC)",
+        fill: "#0284c7",
       }, svg);
       r.addEventListener("mousemove", (ev) => {
         const r2 = host.getBoundingClientRect();
@@ -99,7 +94,7 @@
 
   // ── ROI time-series (BOLD-like) ──────────────────────────────────────────
   async function renderTimeSeries(host) {
-    host.innerHTML = "Loading…";
+    host.innerHTML = "Loading...";
     const data = await fetch(`/api/timeseries/${candidateId}`).then((r) => r.json());
     host.innerHTML = "";
     const series = data.series;
@@ -115,9 +110,9 @@
       dorsal_attention: "#10b981",
       salience: "#f59e0b",
       multiple_demand: "#ef4444",
-      language_vwfa: "#7c5cff",
+      language_vwfa: "#0284c7",
       dmn: "#94a3b8",
-      valuation_proxy: "#d946ef",
+      valuation_proxy: "#ef4444",
     };
 
     // Compute global max for shared y-axis.
@@ -137,7 +132,7 @@
       t.textContent = ((maxY * (4 - g)) / 4).toFixed(2);
     }
     E("text", { x: padL - 36, y: padT - 4, "font-size": 10, fill: "#94a3b8" }, svg).textContent = "predicted activation (a.u.)";
-    E("text", { x: W - padR, y: H - 6, "font-size": 10, fill: "#94a3b8", "text-anchor": "end" }, svg).textContent = "time →";
+    E("text", { x: W - padR, y: H - 6, "font-size": 10, fill: "#94a3b8", "text-anchor": "end" }, svg).textContent = "time";
 
     keys.forEach((k) => {
       const path = series[k].map((v, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(v)}`).join(" ");
@@ -286,7 +281,7 @@
           }
         }
         if (showB) {
-          ctx.strokeStyle = el.is_cta ? "#a48dff" : el.is_interactive ? "#10b981" : "rgba(148,163,184,0.45)";
+          ctx.strokeStyle = el.is_cta ? "#7dd3fc" : el.is_interactive ? "#10b981" : "rgba(148,163,184,0.45)";
           ctx.lineWidth = el.is_cta ? 2 : 1;
           ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
         }

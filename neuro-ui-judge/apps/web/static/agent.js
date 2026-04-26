@@ -63,7 +63,7 @@
   const meanLine = series.filter((s) => s.mean != null).map((s) => [s.iter, s.mean]);
 
   if (meanLine.length) path(meanLine, "#94a3b8", 1.5, true);
-  path(bestLine, "#a48dff", 2);
+  path(bestLine, "#7dd3fc", 2);
   path(runningLine, "#10b981", 3);
 
   // Dots on running best
@@ -75,7 +75,7 @@
   const lg = E("g", { transform: `translate(${padL + 10}, ${padT + 4})` }, svg);
   const items = [
     ["#10b981", "running best"],
-    ["#a48dff", "iteration best child"],
+    ["#7dd3fc", "iteration best child"],
     ["#94a3b8", "iteration mean"],
   ];
   items.forEach(([c, label], i) => {

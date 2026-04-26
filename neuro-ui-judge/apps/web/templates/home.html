@@ -1,32 +1,53 @@
 {% extends "base.html" %}
 {% block title %}NeuroUI Judge — Dashboard{% endblock %}
 {% block content %}
-<section class="grid md:grid-cols-3 gap-6 mb-10">
-  <div class="md:col-span-2 rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-8 relative overflow-hidden">
-    <div class="absolute -top-20 -right-20 w-80 h-80 bg-brand-500/20 rounded-full blur-3xl"></div>
-    <p class="text-xs uppercase tracking-[0.2em] text-brand-300 mb-4">research prototype</p>
-    <h1 class="text-4xl font-bold tracking-tight mb-3">A hybrid <span class="text-brand-300">neural × deterministic</span> reward for UI design.</h1>
-    <p class="text-slate-400 max-w-2xl mb-5">
-      Render UI candidates, audit them against WCAG-grounded standards, predict
-      attention / load / hierarchy through a TRIBE-style neural proxy, calibrate
-      with human pairwise preferences, and let an offline agent improve the
-      design across iterations.
-    </p>
+<section class="mb-8">
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+    <div>
+      <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-2">UI scoring workspace</p>
+      <h1 class="text-3xl font-semibold tracking-tight">Score, compare, and improve interface candidates.</h1>
+      <p class="text-slate-400 max-w-3xl mt-3">Each candidate gets a rendered screenshot, deterministic audit, neural-proxy report, and improvement recommendations.</p>
+    </div>
     <div class="flex flex-wrap gap-3">
-      <a href="/upload" class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Upload a candidate</a>
-      <a href="/compare" class="px-4 py-2 rounded-lg border border-slate-700 hover:border-slate-500 text-slate-200">Compare two</a>
-      <a href="/agent" class="px-4 py-2 rounded-lg border border-slate-700 hover:border-slate-500 text-slate-200">Run agent loop</a>
+      <a href="/upload" class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Score a UI</a>
+      <a href="/compare" class="px-4 py-2 rounded-lg border border-slate-700 hover:border-slate-500 text-slate-200">Compare candidates</a>
     </div>
   </div>
-  <div class="rounded-2xl border border-slate-800 p-6 bg-slate-900/50">
-    <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Active reward weights</p>
+</section>
+
+<section class="grid md:grid-cols-4 gap-4 mb-10">
+  <a href="/upload" class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 hover:border-brand-500/60 transition">
+    <p class="text-xs uppercase tracking-[0.16em] text-slate-500 mb-2">Step 1</p>
+    <h2 class="font-semibold text-slate-100">Score UI</h2>
+    <p class="text-sm text-slate-400 mt-1">Add a candidate and generate its report.</p>
+  </a>
+  <a href="/compare" class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 hover:border-brand-500/60 transition">
+    <p class="text-xs uppercase tracking-[0.16em] text-slate-500 mb-2">Step 2</p>
+    <h2 class="font-semibold text-slate-100">Compare</h2>
+    <p class="text-sm text-slate-400 mt-1">Review two candidates side by side.</p>
+  </a>
+  <a href="/preferences" class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 hover:border-brand-500/60 transition">
+    <p class="text-xs uppercase tracking-[0.16em] text-slate-500 mb-2">Step 3</p>
+    <h2 class="font-semibold text-slate-100">Calibrate</h2>
+    <p class="text-sm text-slate-400 mt-1">Use human choices to update weights.</p>
+  </a>
+  <a href="/agent" class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 hover:border-brand-500/60 transition">
+    <p class="text-xs uppercase tracking-[0.16em] text-slate-500 mb-2">Step 4</p>
+    <h2 class="font-semibold text-slate-100">Improve</h2>
+    <p class="text-sm text-slate-400 mt-1">Generate stronger variants from a seed.</p>
+  </a>
+</section>
+
+<section class="grid lg:grid-cols-3 gap-6 mb-10">
+  <div class="rounded-xl border border-slate-800 p-6 bg-slate-900/50">
+    <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">Active reward weights</p>
     <p class="font-mono text-sm text-brand-300 mb-4">{{ active_weights.version_id }}</p>
     <ul class="space-y-2 text-sm">
       {% for k, v in active_weights.weights.items() %}
       <li class="flex items-center gap-3">
         <span class="w-40 text-slate-400">{{ k }}</span>
         <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
-          <div class="h-full bg-gradient-to-r from-brand-500 to-fuchsia-500" style="width: {{ (v*100)|round(1) }}%"></div>
+          <div class="h-full bg-brand-500" style="width: {{ (v*100)|round(1) }}%"></div>
         </div>
         <span class="w-10 text-right text-slate-300 tabular-nums">{{ "%.2f"|format(v) }}</span>
       </li>
@@ -34,31 +55,31 @@
     </ul>
     <p class="text-xs text-slate-500 mt-4">{{ preference_count }} pairwise preferences collected.</p>
   </div>
-</section>
 
-<section class="mb-10">
-  <div class="flex items-center justify-between mb-3">
-    <h2 class="text-xl font-semibold">Candidates</h2>
-    <a href="/upload" class="text-sm text-brand-300 hover:text-brand-500">+ new candidate</a>
+  <div class="lg:col-span-2">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-xl font-semibold">Candidates</h2>
+      <a href="/upload" class="text-sm text-brand-300 hover:text-brand-500">+ new candidate</a>
+    </div>
+    {% if candidates %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for c in candidates %}
+      <a href="/candidate/{{ c.candidate_id }}" class="group rounded-xl border border-slate-800 bg-slate-900/50 hover:border-brand-500/60 transition p-5">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-medium text-slate-200 truncate">{{ c.label or c.candidate_id }}</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">{{ c.source }}</span>
+        </div>
+        <p class="text-xs text-slate-500 truncate">{{ c.task or "no task" }}</p>
+        <p class="text-xs text-slate-600 font-mono mt-2">{{ c.candidate_id }}</p>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="rounded-xl border border-dashed border-slate-800 p-10 text-center text-slate-500">
+      No candidates yet. <a href="/upload" class="text-brand-300 hover:text-brand-500">Score your first UI</a>
+    </div>
+    {% endif %}
   </div>
-  {% if candidates %}
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    {% for c in candidates %}
-    <a href="/candidate/{{ c.candidate_id }}" class="group rounded-xl border border-slate-800 bg-slate-900/50 hover:border-brand-500/60 transition p-5">
-      <div class="flex items-center justify-between mb-2">
-        <span class="font-medium text-slate-200 truncate">{{ c.label or c.candidate_id }}</span>
-        <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">{{ c.source }}</span>
-      </div>
-      <p class="text-xs text-slate-500 truncate">{{ c.task or "no task" }}</p>
-      <p class="text-xs text-slate-600 font-mono mt-2">{{ c.candidate_id }}</p>
-    </a>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="rounded-xl border border-dashed border-slate-800 p-10 text-center text-slate-500">
-    No candidates yet. <a href="/upload" class="text-brand-300 hover:text-brand-500">Upload your first UI →</a>
-  </div>
-  {% endif %}
 </section>
 
 <section>

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Preferences — NeuroUI Judge{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-semibold mb-2">Human preference calibration</h1>
-<p class="text-slate-400 mb-6">Pairwise labels are stored locally and used to fit the reward weights via a Bradley–Terry / logistic preference model.</p>
+<h1 class="text-2xl font-semibold mb-2">Calibration</h1>
+<p class="text-slate-400 mb-6">Human comparison labels adjust the reward weights so future scores better match local design judgment.</p>
 
 <div class="grid md:grid-cols-3 gap-6 mb-8">
   <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 md:col-span-2">
     <div class="flex items-center justify-between mb-3">
-      <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Stored preferences ({{ preferences|length }})</p>
+      <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Stored preferences ({{ preferences|length }})</p>
       <button id="train-btn" class="px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold">Train reward model</button>
     </div>
     {% if preferences %}
@@ -29,17 +29,17 @@
       </table>
     </div>
     {% else %}
-      <p class="text-slate-500 text-sm">No preferences yet. Visit <a href="/compare" class="text-brand-300">/compare</a> and submit a few.</p>
+      <p class="text-slate-500 text-sm">No preferences yet. Add labels from <a href="/compare" class="text-brand-300">Compare</a>.</p>
     {% endif %}
   </div>
   <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
-    <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Training output</p>
+    <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">Training output</p>
     <pre id="train-output" class="text-xs font-mono text-slate-300 whitespace-pre-wrap">No run yet.</pre>
   </div>
 </div>
 
 <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
-  <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Weight versions</p>
+  <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">Weight versions</p>
   {% if versions %}
   <table class="w-full text-sm">
     <thead class="text-xs text-slate-500 uppercase tracking-wider"><tr>
@@ -57,7 +57,7 @@
     </tbody>
   </table>
   {% else %}
-    <p class="text-slate-500 text-sm">No calibrated versions yet — defaults are in use.</p>
+    <p class="text-slate-500 text-sm">No calibrated versions yet. Defaults are in use.</p>
   {% endif %}
 </div>
 {% endblock %}
@@ -67,7 +67,7 @@
   const trainBtn = document.getElementById("train-btn");
   trainBtn.addEventListener("click", async () => {
     const out = document.getElementById("train-output");
-    out.textContent = "Training…";
+    out.textContent = "Training...";
     const r = await fetch("/api/train-reward-model", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ tau: 1.0, n_steps: 600, learning_rate: 0.5, l2: 0.05 }),

@@ -1,10 +1,7 @@
 /* NeuroUI Judge dashboard styles */
 
 body {
-  background:
-    radial-gradient(1200px 600px at -10% -20%, rgba(124, 92, 255, 0.12), transparent 60%),
-    radial-gradient(900px 600px at 110% -10%, rgba(217, 70, 239, 0.10), transparent 60%),
-    #020617;
+  background: #020617;
 }
 
 #overlay-canvas {
@@ -16,9 +13,9 @@ body {
 .axis line, .axis path { stroke: #334155; }
 .grid line { stroke: #1e293b; stroke-dasharray: 2 3; }
 
-.bar { fill: url(#barGrad); }
-.bar.alt { fill: url(#barGradAlt); }
-.bar:hover { fill: #a48dff; }
+.bar { fill: #38bdf8; }
+.bar.alt { fill: #14b8a6; }
+.bar:hover { fill: #7dd3fc; }
 
 .tooltip {
   position: absolute;
@@ -35,11 +32,6 @@ body {
   display: none;
 }
 .tooltip.show { display: block; }
-
-/* Glow utility */
-.glow-brand {
-  box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.4), 0 8px 30px rgba(124, 92, 255, 0.25);
-}
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }

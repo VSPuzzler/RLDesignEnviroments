@@ -18,14 +18,13 @@ window.NUI = (function () {
   }
 
   function colorRamp(t) {
-    // Magma-ish ramp from deep blue → fuchsia → amber.
+    // Discrete-feeling ramp for proxy heatmaps.
     const stops = [
       [0.00, [15, 23, 42]],
-      [0.20, [59, 130, 246]],
-      [0.40, [124, 92, 255]],
-      [0.60, [217, 70, 239]],
-      [0.80, [245, 158, 11]],
-      [1.00, [254, 240, 138]],
+      [0.25, [2, 132, 199]],
+      [0.50, [20, 184, 166]],
+      [0.75, [245, 158, 11]],
+      [1.00, [239, 68, 68]],
     ];
     t = clamp(t);
     for (let i = 1; i < stops.length; i++) {

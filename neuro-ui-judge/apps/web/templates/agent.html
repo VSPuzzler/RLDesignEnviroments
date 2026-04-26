@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Agent — NeuroUI Judge{% endblock %}
 {% block content %}
-<h1 class="text-2xl font-semibold mb-2">Design agent</h1>
-<p class="text-slate-400 mb-6">Offline evolutionary search: each iteration, the agent picks the best parent, reads its weak sub-scores, and applies targeted CSS / structural mutations to spawn N children. Optionally a redesign LLM produces an extra fresh variant.</p>
+<h1 class="text-2xl font-semibold mb-2">Improve a UI</h1>
+<p class="text-slate-400 mb-6">Generate and score design variants from a seed screen, then inspect which changes improved the reward.</p>
 
 <div class="grid lg:grid-cols-3 gap-6">
   <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5 lg:col-span-1">
-    <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Run a new search</p>
+    <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">New improvement run</p>
     <form id="agent-form" class="space-y-3">
       <label class="block">
         <span class="text-xs text-slate-400">Brief</span>
         <input name="brief" placeholder="Landing page for a productivity SaaS" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm" />
       </label>
       <label class="block">
-        <span class="text-xs text-slate-400">Task</span>
+          <span class="text-xs text-slate-400">User task</span>
         <input name="task" placeholder="Sign up for free trial" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm" />
       </label>
       <div class="grid grid-cols-2 gap-3">
@@ -33,14 +33,14 @@
       <label class="flex items-center gap-2 text-xs text-slate-400">
         <input type="checkbox" name="use_llm" /> use LLM redesign (requires OPENROUTER_API_KEY)
       </label>
-      <button class="w-full px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Run agent</button>
+      <button class="w-full px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold">Generate variants</button>
     </form>
     <p id="agent-status" class="text-xs text-slate-400 mt-3"></p>
   </div>
 
   <div class="lg:col-span-2 space-y-6">
     <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
-      <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Recent runs</p>
+      <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">Recent improvement runs</p>
       {% if runs %}
       <ul class="text-sm divide-y divide-slate-800">
       {% for r in runs %}
@@ -57,14 +57,14 @@
     {% if run %}
     <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
       <div class="flex items-center justify-between mb-3">
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Reward across iterations</p>
+        <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Reward across iterations</p>
         <span class="text-xs text-slate-500 font-mono">{{ run.run_id }}</span>
       </div>
       <div id="agent-curve" style="height: 260px;"></div>
     </div>
 
     <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
-      <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-3">Iterations</p>
+      <p class="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3">Generated variants</p>
       <div class="space-y-3">
       {% for it in run.iterations %}
         <div class="rounded-lg border border-slate-800 p-3">
@@ -72,7 +72,7 @@
             <span class="text-sm text-slate-300">Iteration {{ it.iteration }}</span>
             <span class="text-sm font-mono text-emerald-300">best {{ "%.3f"|format(it.best_reward) }}</span>
           </div>
-          {% if it.mutation_plan %}<p class="text-xs text-slate-400 mb-1">plan: <span class="text-brand-300 font-mono">{{ it.mutation_plan|join(' → ') }}</span></p>{% endif %}
+          {% if it.mutation_plan %}<p class="text-xs text-slate-400 mb-1">changes: <span class="text-brand-300 font-mono">{{ it.mutation_plan|join(' / ') }}</span></p>{% endif %}
           <p class="text-xs text-slate-400 mb-2">{{ it.explanation }}</p>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
             {% for cid in it.candidate_ids %}
@@ -113,7 +113,7 @@ p{color:#777;font-size:14px;line-height:1.4;max-width:540px}
     e.preventDefault();
     const fd = new FormData(e.target);
     const status = document.getElementById("agent-status");
-    status.textContent = "Running agent (this may take a minute)…";
+    status.textContent = "Generating variants. This may take a minute...";
     const r = await fetch("/api/generate-variants", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({

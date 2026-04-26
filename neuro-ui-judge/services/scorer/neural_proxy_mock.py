@@ -197,6 +197,66 @@ def predict_neural_proxy(
     return proxy
 
 
+# ── Vertex-map synthesis for the dashboard ──────────────────────────────────
+
+
+def synthesize_vertex_activation(
+    neural_proxy: dict[str, Any],
+    n_vertices: int = 20484,
+    seed: int | None = None,
+) -> list[float]:
+    """
+    Build a deterministic fsaverage5-sized activation vector from ROI summaries.
+
+    The mock renderer only has ROI-level values, while the dashboard expects a
+    cortical vertex array. We divide the vector into stable ROI bands, blend in
+    neighbouring ROI levels, and add tiny seeded variation so the 3D surface
+    looks spatial rather than flat.
+    """
+    import random
+
+    rng = random.Random(seed if seed is not None else 0)
+    roi_features = neural_proxy.get("roi_features", {}) or {}
+    roi_order = [
+        "visual",
+        "dorsal_attention",
+        "salience",
+        "multiple_demand",
+        "language_vwfa",
+        "dmn",
+        "valuation_proxy",
+    ]
+
+    values: dict[str, float] = {}
+    for roi in roi_order:
+        feats = roi_features.get(roi, {}) or {}
+        auc = float(feats.get("auc", 0.5))
+        peak = float(feats.get("peak", auc))
+        variance = float(feats.get("variance", 0.25))
+        if roi == "dmn":
+            base = float(feats.get("suppression", max(0.0, 1.0 - auc)))
+        else:
+            base = 0.65 * auc + 0.25 * peak + 0.10 * variance
+        values[roi] = max(0.0, min(1.0, base))
+
+    band = max(1, math.ceil(n_vertices / len(roi_order)))
+    arr: list[float] = []
+    for i in range(n_vertices):
+        band_idx = min(len(roi_order) - 1, i // band)
+        roi = roi_order[band_idx]
+        left = roi_order[max(0, band_idx - 1)]
+        right = roi_order[min(len(roi_order) - 1, band_idx + 1)]
+
+        local_t = (i % band) / max(1, band - 1)
+        envelope = 0.5 - 0.5 * math.cos(2 * math.pi * local_t)
+        neighbour = (values[left] + values[right]) / 2.0
+        wave = 0.08 * math.sin((i / max(1, n_vertices)) * math.tau * 14.0)
+        jitter = rng.uniform(-0.025, 0.025)
+        val = 0.78 * values[roi] + 0.14 * neighbour + 0.08 * envelope + wave + jitter
+        arr.append(round(max(0.0, min(1.0, val)), 6))
+    return arr
+
+
 # ── Time-series synthesis for the dashboard ─────────────────────────────────
 
 
