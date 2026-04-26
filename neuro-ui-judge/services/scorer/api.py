@@ -19,6 +19,7 @@ Plus a server-rendered dashboard at /, /candidate/{id}, /compare,
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import uuid
@@ -26,7 +27,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -38,7 +39,7 @@ from . import (
     tribe_adapter,
     tribe_v2_backend,
 )
-from .agent import AgentDeps, run_agent
+from .agent import AgentDeps, run_agent, mutate_html
 from .neural_proxy_mock import synthesize_roi_timeseries
 from .storage import Storage
 
@@ -136,6 +137,154 @@ class GenerateIn(BaseModel):
     max_iterations: int = 4
     population_size: int = 3
     use_llm: bool = False
+
+
+class GeneratePairIn(BaseModel):
+    prompt: str
+    use_llm: bool = False
+
+
+# ── Seed HTML builder ──────────────────────────────────────────────────────
+
+_SEED_TEMPLATE = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>__NAME__</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8f9fa; color: #222; }
+    nav { background: #fff; padding: 0 32px; height: 60px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e5e7eb; }
+    .logo { font-weight: 700; font-size: 18px; color: #111; }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a { color: #555; text-decoration: none; font-size: 14px; }
+    .nav-cta { background: #6366f1; color: #fff !important; padding: 8px 16px; border-radius: 6px; font-weight: 600; }
+    .hero { max-width: 800px; margin: 0 auto; padding: 96px 32px 80px; text-align: center; }
+    .hero h1 { font-size: 48px; font-weight: 800; line-height: 1.15; color: #111; margin-bottom: 20px; }
+    .hero p { font-size: 18px; color: #666; line-height: 1.65; margin-bottom: 36px; }
+    .btn { display: inline-block; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 16px; cursor: pointer; border: none; }
+    .btn-primary { background: #6366f1; color: #fff; }
+    .btn-secondary { background: #fff; color: #6366f1; border: 1px solid #6366f1; margin-left: 12px; }
+    .features { background: #fff; padding: 80px 32px; }
+    .features-inner { max-width: 1100px; margin: 0 auto; }
+    .features h2 { text-align: center; font-size: 32px; font-weight: 700; color: #111; margin-bottom: 48px; }
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .feature-card { padding: 28px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fafafa; }
+    .feature-card h3 { font-size: 17px; font-weight: 600; color: #111; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: #666; line-height: 1.6; }
+    .cta-section { padding: 80px 32px; text-align: center; background: #f0f0ff; }
+    .cta-section h2 { font-size: 36px; font-weight: 700; color: #111; margin-bottom: 16px; }
+    .cta-section p { font-size: 16px; color: #666; margin-bottom: 28px; }
+    footer { background: #111; color: #888; padding: 24px 32px; text-align: center; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">__NAME__</div>
+    <div class="nav-links">
+      <a href="#">Features</a>
+      <a href="#">Pricing</a>
+      <a href="#">Blog</a>
+      <a href="#" class="nav-cta">Get Started</a>
+    </div>
+  </nav>
+  <section class="hero">
+    <h1>__HEADLINE__</h1>
+    <p>__SUBHEADLINE__</p>
+    <a href="#" class="btn btn-primary" role="button">__CTA__</a>
+    <a href="#" class="btn btn-secondary">Learn More</a>
+  </section>
+  <section class="features">
+    <div class="features-inner">
+      <h2>__FEATURES_TITLE__</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>__F1_TITLE__</h3>
+          <p>__F1_DESC__</p>
+        </div>
+        <div class="feature-card">
+          <h3>__F2_TITLE__</h3>
+          <p>__F2_DESC__</p>
+        </div>
+        <div class="feature-card">
+          <h3>__F3_TITLE__</h3>
+          <p>__F3_DESC__</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="cta-section">
+    <h2>Ready to get started?</h2>
+    <p>Join thousands of users who trust __NAME__.</p>
+    <a href="#" class="btn btn-primary" role="button">__CTA__</a>
+  </section>
+  <footer>© 2025 __NAME__. All rights reserved.</footer>
+</body>
+</html>
+"""
+
+_SEED_CONTEXTS = {
+    ("fitness", "workout", "gym", "health", "training"): dict(
+        name="FitPro", headline="Train Smarter, Not Harder",
+        subheadline="The all-in-one fitness platform to help you reach peak performance faster.",
+        cta="Start Free Trial", features_title="Everything you need to perform",
+        f1_title="Personalized Plans", f1_desc="AI-powered workout plans tailored to your goals and current fitness level.",
+        f2_title="Progress Tracking", f2_desc="Track every rep, set, and session with beautiful charts and insights.",
+        f3_title="Expert Coaching", f3_desc="Get guidance from certified trainers whenever you need it, 24/7.",
+    ),
+    ("ecommerce", "shop", "store", "marketplace", "sell"): dict(
+        name="ShopFlow", headline="Sell More, Manage Less",
+        subheadline="The modern ecommerce platform that grows with your business from day one.",
+        cta="Open Your Store", features_title="Built for serious sellers",
+        f1_title="Smart Inventory", f1_desc="Automatically track stock levels and get alerts before you run out.",
+        f2_title="Instant Payments", f2_desc="Accept payments globally with zero setup fees or hidden charges.",
+        f3_title="Growth Analytics", f3_desc="Understand your customers and grow revenue with clear, actionable insights.",
+    ),
+    ("dashboard", "analytics", "data", "metrics", "reporting"): dict(
+        name="DataLens", headline="Insights at a Glance",
+        subheadline="Turn your data into decisions with beautiful, real-time dashboards.",
+        cta="View Demo", features_title="Powerful analytics, zero complexity",
+        f1_title="Real-time Data", f1_desc="Stream live data from any source and see changes the moment they happen.",
+        f2_title="Custom Reports", f2_desc="Build stunning reports in minutes with drag-and-drop simplicity.",
+        f3_title="Team Sharing", f3_desc="Share dashboards with your team and keep everyone on the same page.",
+    ),
+    ("saas", "project", "management", "team", "productivity", "workflow"): dict(
+        name="FlowWork", headline="Work Without Limits",
+        subheadline="Project management reimagined for modern teams who get things done.",
+        cta="Get Started Free", features_title="Everything your team needs",
+        f1_title="Task Management", f1_desc="Organize work with intuitive boards, lists, and visual timelines.",
+        f2_title="Team Collaboration", f2_desc="Work together in real-time with comments, mentions, and shared files.",
+        f3_title="Smart Deadlines", f3_desc="Never miss a deadline with automated reminders and progress tracking.",
+    ),
+}
+
+_DEFAULT_CONTEXT = dict(
+    name="LaunchKit", headline="Ship Your Idea, Today",
+    subheadline="The fastest way to go from idea to product with a platform designed for builders.",
+    cta="Get Started Free", features_title="Everything you need to launch",
+    f1_title="Lightning Fast", f1_desc="Built for speed at every layer so your users always get the best experience.",
+    f2_title="Scales With You", f2_desc="From zero to millions of users, our infrastructure grows automatically.",
+    f3_title="Developer First", f3_desc="Clean APIs, great docs, and a community of builders ready to help.",
+)
+
+
+def _build_seed_html(prompt: str) -> str:
+    p = prompt.lower()
+    ctx = _DEFAULT_CONTEXT
+    for keywords, candidate_ctx in _SEED_CONTEXTS.items():
+        if any(w in p for w in keywords):
+            ctx = candidate_ctx
+            break
+    html = _SEED_TEMPLATE
+    for key, value in ctx.items():
+        html = html.replace(f"__{key.upper()}__", value)
+    return html
+
+
+def _sse(type_: str, **data: Any) -> str:
+    return f"data: {json.dumps({'type': type_, **data})}\n\n"
 
 
 # ── App + middleware ───────────────────────────────────────────────────────
@@ -324,6 +473,77 @@ def api_train(body: TrainIn) -> dict[str, Any]:
     )
     out["calibration"] = preference_model.calibration_curve(prefs, reports, out["weights"], out["tau"])
     return out
+
+
+@app.post("/api/generate-pair")
+def api_generate_pair(body: GeneratePairIn):
+    """Stream two UI variants being built and scored, then compare them."""
+
+    def stream():
+        seed_html = _build_seed_html(body.prompt)
+
+        # ── Design A ──────────────────────────────────────────────────────
+        yield _sse("status", message="Generating Design A…")
+        html_a = mutate_html(seed_html, ["improve_contrast", "emphasise_cta"])
+        cid_a = uuid.uuid4().hex[:10]
+        storage.upsert_candidate({
+            "candidate_id": cid_a,
+            "label": "Design A",
+            "source": "html",
+            "html": html_a,
+            "task": body.prompt,
+            "created_at": _now(),
+            "metadata": {"pair_prompt": body.prompt, "variant": "a"},
+        })
+        yield _sse("html_a", candidate_id=cid_a, html=html_a)
+        yield _sse("status", message="Scoring Design A…")
+        art_a = _render_candidate(cid_a, html_a)
+        rep_a = _score_artifact(cid_a, art_a)
+        yield _sse("score_a",
+                   candidate_id=cid_a,
+                   reward=round(float(rep_a["overall_reward"]), 3),
+                   grade=rep_a["grade"],
+                   explanation=rep_a.get("explanation", "")[:300])
+
+        # ── Design B ──────────────────────────────────────────────────────
+        yield _sse("status", message="Generating Design B…")
+        html_b = mutate_html(seed_html, ["reorganise_hierarchy", "reduce_density", "improve_spacing"])
+        cid_b = uuid.uuid4().hex[:10]
+        storage.upsert_candidate({
+            "candidate_id": cid_b,
+            "label": "Design B",
+            "source": "html",
+            "html": html_b,
+            "task": body.prompt,
+            "created_at": _now(),
+            "metadata": {"pair_prompt": body.prompt, "variant": "b"},
+        })
+        yield _sse("html_b", candidate_id=cid_b, html=html_b)
+        yield _sse("status", message="Scoring Design B…")
+        art_b = _render_candidate(cid_b, html_b)
+        rep_b = _score_artifact(cid_b, art_b)
+        yield _sse("score_b",
+                   candidate_id=cid_b,
+                   reward=round(float(rep_b["overall_reward"]), 3),
+                   grade=rep_b["grade"],
+                   explanation=rep_b.get("explanation", "")[:300])
+
+        # ── Compare ───────────────────────────────────────────────────────
+        weights, _ = _active_weights()
+        p_a = preference_model.predict_pairwise_probability(rep_a, rep_b, weights)
+        winner = "a" if p_a > 0.5 else ("b" if p_a < 0.5 else "tie")
+        yield _sse("comparison",
+                   winner=winner,
+                   p_a_over_b=round(float(p_a), 3),
+                   reward_a=round(float(rep_a["overall_reward"]), 3),
+                   reward_b=round(float(rep_b["overall_reward"]), 3))
+        yield _sse("done")
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/api/generate-variants")
@@ -614,5 +834,14 @@ def page_upload(request: Request):
     return templates.TemplateResponse(
         request,
         "upload.html",
+        {"tribe_mode": tribe_adapter.active_mode()},
+    )
+
+
+@app.get("/generate", response_class=HTMLResponse)
+def page_generate(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "generate.html",
         {"tribe_mode": tribe_adapter.active_mode()},
     )
